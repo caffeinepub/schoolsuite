@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "Bricolage Grotesque";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/assets/fonts/BricolageGrotesque.woff2") format("woff2");
+}
+
+@font-face {
+  font-family: "Plus Jakarta Sans";
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("/assets/fonts/PlusJakartaSans.woff2") format("woff2");
+}
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    /* SchoolSuite — deep indigo + slate */
+    --background: 0.97 0.005 265;
+    --foreground: 0.2 0.02 265;
+    --card: 1.0 0 0;
+    --card-foreground: 0.2 0.02 265;
+    --popover: 1.0 0 0;
+    --popover-foreground: 0.2 0.02 265;
+    --primary: 0.5 0.22 265;
+    --primary-foreground: 0.99 0 0;
+    --secondary: 0.92 0.04 265;
+    --secondary-foreground: 0.3 0.05 265;
+    --muted: 0.94 0.02 265;
+    --muted-foreground: 0.52 0.04 265;
+    --accent: 0.92 0.06 265;
+    --accent-foreground: 0.35 0.1 265;
+    --destructive: 0.55 0.22 20;
+    --destructive-foreground: 0.99 0 0;
+    --border: 0.88 0.02 265;
+    --input: 0.88 0.02 265;
+    --ring: 0.5 0.22 265;
+    --success: 0.55 0.18 145;
+    --success-foreground: 0.99 0 0;
+    --warning: 0.72 0.18 80;
+    --warning-foreground: 0.2 0.02 80;
+    --chart-1: 0.5 0.22 265;
+    --chart-2: 0.62 0.18 220;
+    --chart-3: 0.55 0.18 145;
+    --chart-4: 0.72 0.18 80;
+    --chart-5: 0.55 0.22 20;
+    --sidebar: 0.17 0.04 265;
+    --sidebar-foreground: 0.82 0.03 265;
+    --sidebar-primary: 0.55 0.22 265;
+    --sidebar-primary-foreground: 0.99 0 0;
+    --sidebar-accent: 0.25 0.06 265;
+    --sidebar-accent-foreground: 0.9 0.02 265;
+    --sidebar-border: 0.25 0.04 265;
+    --sidebar-ring: 0.55 0.22 265;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Bricolage Grotesque", system-ui, sans-serif;
+    font-weight: 600;
+  }
+}
+
+@layer utilities {
+  .sidebar-bg {
+    background: oklch(var(--sidebar));
+  }
+  .sidebar-text {
+    color: oklch(var(--sidebar-foreground));
+  }
+  .badge-success {
+    background: oklch(var(--success) / 0.15);
+    color: oklch(var(--success));
+  }
+  .badge-warning {
+    background: oklch(var(--warning) / 0.15);
+    color: oklch(var(--warning-foreground));
+  }
+  .badge-destructive {
+    background: oklch(var(--destructive) / 0.12);
+    color: oklch(var(--destructive));
+  }
+  .card-hover {
+    transition: box-shadow 0.15s ease, transform 0.15s ease;
+  }
+  .card-hover:hover {
+    box-shadow: 0 4px 16px oklch(var(--primary) / 0.12);
+    transform: translateY(-1px);
+  }
+}
