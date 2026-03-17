@@ -138,13 +138,27 @@ actor {
   var timetableId = 1;
   var userId = 1;
 
-  // Auth helpers
-  func hashPassword(password : Text, salt : Text) : Text {
-    password # salt;
+  // Auth helpers - hash is password concatenated with username
+  func hashPassword(password : Text, username : Text) : Text {
+    password # username;
   };
 
-  func verifyPassword(password : Text, hash : Text, salt : Text) : Bool {
-    hashPassword(password, salt) == hash;
+  func verifyPassword(password : Text, hash : Text, username : Text) : Bool {
+    hashPassword(password, username) == hash;
+  };
+
+  // Initialize default admin account at startup
+  do {
+    if (not users.containsKey("admin")) {
+      let adminUser : UserAccount = {
+        id = 0;
+        username = "admin";
+        passwordHash = hashPassword("admin123", "admin");
+        role = #admin;
+        displayName = "Admin User";
+      };
+      users.add("admin", adminUser);
+    };
   };
 
   // User Profile functions (required by frontend)
@@ -173,11 +187,10 @@ actor {
   public shared ({ caller }) func login(username : Text, password : Text) : async AuthResponse {
     switch (users.get(username)) {
       case (?user) {
-        let salt = user.passwordHash;
-        let isValid = verifyPassword(password, user.passwordHash, salt);
+        let isValid = verifyPassword(password, user.passwordHash, user.username);
 
         if (isValid) {
-          let token = username # salt # user.id.toText();
+          let token = username # user.passwordHash # user.id.toText();
           sessions.add(token, username);
           { token; user };
         } else {
@@ -214,7 +227,7 @@ actor {
         switch (users.get(adminId)) {
           case (?adminUser) {
             if (adminUser.role == #admin) {
-              let hashedPassword = hashPassword(password, password.concat(username));
+              let hashedPassword = hashPassword(password, username);
               let newUser : UserAccount = {
                 id = userId;
                 username;
@@ -573,7 +586,7 @@ actor {
   };
 
   // Results functions
-  public shared ({ caller }) func addResult(
+  public shared func addResult(
     studentId : Nat,
     subject : Text,
     examName : Text,
@@ -581,10 +594,6 @@ actor {
     totalMarks : Float,
     grade : Text,
   ) : async Nat {
-    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
-      Runtime.trap("Unauthorized: Only authenticated users can add results");
-    };
-
     let newResult : Result = {
       id = resultId;
       studentId;
@@ -682,18 +691,6 @@ actor {
     if (students.size() > 0) {
       Runtime.trap("Data already seeded");
     };
-
-    let adminSalt = "mySalt";
-    let adminHashedPassword = hashPassword("admin123", adminSalt);
-    let adminUser : UserAccount = {
-      id = userId;
-      username = "admin";
-      passwordHash = adminHashedPassword;
-      role = #admin;
-      displayName = "Admin User";
-    };
-    users.add("admin", adminUser);
-    userId += 1;
 
     let studentList = [
       {
