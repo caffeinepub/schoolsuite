@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState } from "react";
 import type { UserAccount } from "../backend";
 import { useActor } from "../hooks/useActor";
 
-const TOKEN_KEY = "edulite_token";
+const TOKEN_KEY = "authToken";
 
 interface AuthContextValue {
   currentUser: UserAccount | null;
@@ -23,12 +23,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isFetching || !actor) return;
+    // Still waiting for actor to load
+    if (isFetching) return;
+
+    // Actor not available - show login immediately
+    if (!actor) {
+      setIsLoading(false);
+      return;
+    }
+
     const storedToken = localStorage.getItem(TOKEN_KEY);
     if (!storedToken) {
       setIsLoading(false);
       return;
     }
+
     actor
       .getCurrentUser(storedToken)
       .then((user) => {
@@ -54,12 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(res.token);
     setCurrentUser(res.user);
     // seed data after first login
-    actor.seedData().catch(() => {});
+    actor.seedData(res.token).catch(() => {});
   }
 
   async function logout() {
-    if (actor && token) {
-      await actor.logout(token).catch(() => {});
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    if (actor && storedToken) {
+      await actor.logout(storedToken).catch(() => {});
     }
     localStorage.removeItem(TOKEN_KEY);
     setToken(null);

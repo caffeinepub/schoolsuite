@@ -42,6 +42,7 @@ export default function UserManagement() {
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<UserAccount | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [formError, setFormError] = useState("");
 
   const [formUsername, setFormUsername] = useState("");
   const [formPassword, setFormPassword] = useState("");
@@ -68,6 +69,7 @@ export default function UserManagement() {
     setFormUsername("");
     setFormPassword("");
     setFormDisplayName("");
+    setFormError("");
     setEditTarget(null);
     setDialogMode("add");
   }
@@ -76,20 +78,39 @@ export default function UserManagement() {
     setFormUsername(teacher.username);
     setFormPassword("");
     setFormDisplayName(teacher.displayName);
+    setFormError("");
     setEditTarget(teacher);
     setDialogMode("edit");
   }
 
   async function handleSave() {
     if (!actor || !token) return;
+    setFormError("");
+
+    // Frontend validation: prevent reserved username
+    if (dialogMode === "add") {
+      if (formUsername.trim().toLowerCase() === "admin") {
+        setFormError("Username 'admin' is reserved and cannot be used.");
+        return;
+      }
+      if (
+        !formUsername.trim() ||
+        !formPassword.trim() ||
+        !formDisplayName.trim()
+      ) {
+        setFormError("All fields are required.");
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       if (dialogMode === "add") {
         await actor.createTeacherAccount(
           token,
-          formUsername,
+          formUsername.trim(),
           formPassword,
-          formDisplayName,
+          formDisplayName.trim(),
         );
         toast.success("Teacher account created");
       } else if (dialogMode === "edit" && editTarget) {
@@ -103,8 +124,15 @@ export default function UserManagement() {
       }
       setDialogMode(null);
       await loadTeachers();
-    } catch {
-      toast.error("Failed to save teacher account");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("already exists")) {
+        setFormError("That username is already taken. Choose a different one.");
+      } else if (msg.includes("reserved")) {
+        setFormError("Username 'admin' is reserved and cannot be used.");
+      } else {
+        toast.error("Failed to save teacher account");
+      }
     } finally {
       setSaving(false);
     }
@@ -243,7 +271,10 @@ export default function UserManagement() {
               <Input
                 placeholder="Full name"
                 value={formDisplayName}
-                onChange={(e) => setFormDisplayName(e.target.value)}
+                onChange={(e) => {
+                  setFormDisplayName(e.target.value);
+                  setFormError("");
+                }}
               />
             </div>
             <div className="space-y-1.5">
@@ -251,7 +282,11 @@ export default function UserManagement() {
               <Input
                 placeholder="Login username"
                 value={formUsername}
-                onChange={(e) => setFormUsername(e.target.value)}
+                onChange={(e) => {
+                  setFormUsername(e.target.value);
+                  setFormError("");
+                }}
+                disabled={dialogMode === "edit"}
               />
             </div>
             {dialogMode === "add" && (
@@ -261,8 +296,19 @@ export default function UserManagement() {
                   type="password"
                   placeholder="Set initial password"
                   value={formPassword}
-                  onChange={(e) => setFormPassword(e.target.value)}
+                  onChange={(e) => {
+                    setFormPassword(e.target.value);
+                    setFormError("");
+                  }}
                 />
+              </div>
+            )}
+            {formError && (
+              <div
+                data-ocid="user_mgmt.error_state"
+                className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2"
+              >
+                {formError}
               </div>
             )}
           </div>

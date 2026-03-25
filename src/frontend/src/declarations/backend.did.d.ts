@@ -22,9 +22,30 @@ export interface Fee {
   'id' : bigint,
   'status' : string,
   'studentId' : bigint,
+  'feeType' : string,
   'dueDate' : string,
   'description' : string,
+  'collectedBy' : string,
   'paidDate' : [] | [string],
+  'paidAmount' : bigint,
+  'amount' : bigint,
+}
+export interface FeeSummary {
+  'totalCollected' : bigint,
+  'totalPending' : bigint,
+  'byFeeType' : Array<[string, bigint, bigint]>,
+}
+export interface FeeType {
+  'id' : bigint,
+  'name' : string,
+  'description' : string,
+  'defaultAmount' : bigint,
+}
+export interface GradeFeeAssignment {
+  'id' : bigint,
+  'dueDate' : string,
+  'feeTypeId' : bigint,
+  'grade' : string,
   'amount' : bigint,
 }
 export interface Homework {
@@ -122,58 +143,102 @@ export interface _SERVICE {
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
   'addAttendance' : ActorMethod<
-    [bigint, string, string, [] | [string]],
+    [string, bigint, string, string, [] | [string]],
     bigint
   >,
   'addFee' : ActorMethod<
-    [bigint, bigint, string, string, [] | [string], string],
+    [
+      string,
+      bigint,
+      bigint,
+      string,
+      string,
+      [] | [string],
+      string,
+      string,
+      string,
+      bigint,
+    ],
     bigint
   >,
-  'addHomework' : ActorMethod<[string, string, string, string, string], bigint>,
-  'addNotice' : ActorMethod<[string, string, string], bigint>,
+  'addFeeType' : ActorMethod<[string, string, string, bigint], bigint>,
+  'addHomework' : ActorMethod<
+    [string, string, string, string, string, string],
+    bigint
+  >,
+  'addNotice' : ActorMethod<[string, string, string, string], bigint>,
   'addResult' : ActorMethod<
-    [bigint, string, string, number, number, string],
+    [string, bigint, string, string, number, number, string],
     bigint
   >,
   'addStudent' : ActorMethod<
-    [string, string, string, bigint, string, string],
+    [string, string, string, string, bigint, string, string],
     bigint
   >,
   'addTimetableEntry' : ActorMethod<
-    [string, string, bigint, string, string, string, string],
+    [string, string, string, bigint, string, string, string, string],
     bigint
   >,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole__1], undefined>,
+  'assignFeeToGrade' : ActorMethod<
+    [string, string, bigint, bigint, string],
+    bigint
+  >,
   'createTeacherAccount' : ActorMethod<
     [string, string, string, string],
     undefined
   >,
-  'dashboardStats' : ActorMethod<[], Stats>,
-  'deleteStudent' : ActorMethod<[bigint], undefined>,
+  'dashboardStats' : ActorMethod<[string], Stats>,
+  'deleteFee' : ActorMethod<[string, bigint], undefined>,
+  'deleteFeeType' : ActorMethod<[string, bigint], undefined>,
+  'deleteStudent' : ActorMethod<[string, bigint], undefined>,
   'deleteTeacherAccount' : ActorMethod<[string, bigint], undefined>,
-  'getAllNotices' : ActorMethod<[], Array<Notice>>,
-  'getAllStudents' : ActorMethod<[], Array<Student>>,
-  'getAttendanceByClass' : ActorMethod<[string], Array<Attendance>>,
-  'getAttendanceByStudent' : ActorMethod<[bigint], Array<Attendance>>,
+  'getAllFees' : ActorMethod<[string], Array<Fee>>,
+  'getAllNotices' : ActorMethod<[string], Array<Notice>>,
+  'getAllStudents' : ActorMethod<[string], Array<Student>>,
+  'getAttendanceByClass' : ActorMethod<[string, string], Array<Attendance>>,
+  'getAttendanceByStudent' : ActorMethod<[string, bigint], Array<Attendance>>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole__1>,
   'getCurrentUser' : ActorMethod<[string], [] | [UserAccount]>,
-  'getFeesByStudent' : ActorMethod<[bigint], Array<Fee>>,
-  'getHomeworkByClass' : ActorMethod<[string], Array<Homework>>,
-  'getPendingFees' : ActorMethod<[], Array<Fee>>,
-  'getResultsByStudent' : ActorMethod<[bigint], Array<Result>>,
-  'getStudent' : ActorMethod<[bigint], [] | [Student]>,
-  'getTimetableByClass' : ActorMethod<[string], Array<TimetableEntry>>,
+  'getFeeSummary' : ActorMethod<[string], FeeSummary>,
+  'getFeeTypes' : ActorMethod<[string], Array<FeeType>>,
+  'getFeesByStudent' : ActorMethod<[string, bigint], Array<Fee>>,
+  'getGradeFeeAssignments' : ActorMethod<[string], Array<GradeFeeAssignment>>,
+  'getHomeworkByClass' : ActorMethod<[string, string], Array<Homework>>,
+  'getPendingFees' : ActorMethod<[string], Array<Fee>>,
+  'getPendingFeesWithStudents' : ActorMethod<[string], Array<[Fee, string]>>,
+  'getResultsByStudent' : ActorMethod<[string, bigint], Array<Result>>,
+  'getStudent' : ActorMethod<[string, bigint], [] | [Student]>,
+  'getTimetableByClass' : ActorMethod<[string, string], Array<TimetableEntry>>,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listTeachers' : ActorMethod<[string], Array<UserAccount>>,
   'login' : ActorMethod<[string, string], AuthResponse>,
   'logout' : ActorMethod<[string], undefined>,
   'saveCallerUserProfile' : ActorMethod<[UserProfile], undefined>,
-  'seedData' : ActorMethod<[], undefined>,
-  'updateFeeStatus' : ActorMethod<[bigint, string], undefined>,
+  'seedData' : ActorMethod<[string], undefined>,
+  'updateFee' : ActorMethod<
+    [
+      string,
+      bigint,
+      bigint,
+      string,
+      string,
+      [] | [string],
+      string,
+      string,
+      string,
+      bigint,
+    ],
+    undefined
+  >,
+  'updateFeeType' : ActorMethod<
+    [string, bigint, string, string, bigint],
+    undefined
+  >,
   'updateStudent' : ActorMethod<
-    [bigint, string, string, string, bigint, string, string],
+    [string, bigint, string, string, string, bigint, string, string],
     undefined
   >,
   'updateTeacherAccount' : ActorMethod<

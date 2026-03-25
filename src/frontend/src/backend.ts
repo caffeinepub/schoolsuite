@@ -107,15 +107,6 @@ export interface Attendance {
 export interface _CaffeineStorageRefillInformation {
     proposed_top_up_amount?: bigint;
 }
-export interface Fee {
-    id: bigint;
-    status: string;
-    studentId: bigint;
-    dueDate: string;
-    description: string;
-    paidDate?: string;
-    amount: bigint;
-}
 export interface Stats {
     totalStudents: bigint;
     pendingFees: bigint;
@@ -142,6 +133,18 @@ export interface TimetableEntry {
     teacherName: string;
     periodNum: bigint;
 }
+export interface Fee {
+    id: bigint;
+    status: string;
+    studentId: bigint;
+    feeType: string;
+    dueDate: string;
+    description: string;
+    collectedBy: string;
+    paidDate?: string;
+    paidAmount: bigint;
+    amount: bigint;
+}
 export interface Result {
     id: bigint;
     totalMarks: number;
@@ -151,12 +154,30 @@ export interface Result {
     grade: string;
     examName: string;
 }
+export interface GradeFeeAssignment {
+    id: bigint;
+    dueDate: string;
+    feeTypeId: bigint;
+    grade: string;
+    amount: bigint;
+}
+export interface FeeType {
+    id: bigint;
+    name: string;
+    description: string;
+    defaultAmount: bigint;
+}
 export interface Notice {
     id: bigint;
     title: string;
     postedBy: Principal;
     content: string;
     createdAt: string;
+}
+export interface FeeSummary {
+    totalCollected: bigint;
+    totalPending: bigint;
+    byFeeType: Array<[string, bigint, bigint]>;
 }
 export interface Homework {
     id: bigint;
@@ -198,41 +219,51 @@ export interface backendInterface {
     _caffeineStorageRefillCashier(refillInformation: _CaffeineStorageRefillInformation | null): Promise<_CaffeineStorageRefillResult>;
     _caffeineStorageUpdateGatewayPrincipals(): Promise<void>;
     _initializeAccessControlWithSecret(userSecret: string): Promise<void>;
-    addAttendance(studentId: bigint, date: string, status: string, classId: string | null): Promise<bigint>;
-    addFee(studentId: bigint, amount: bigint, description: string, dueDate: string, paidDate: string | null, status: string): Promise<bigint>;
-    addHomework(title: string, description: string, subject: string, classId: string, dueDate: string): Promise<bigint>;
-    addNotice(title: string, content: string, createdAt: string): Promise<bigint>;
-    addResult(studentId: bigint, subject: string, examName: string, marksObtained: number, totalMarks: number, grade: string): Promise<bigint>;
-    addStudent(name: string, grade: string, section: string, rollNo: bigint, guardianName: string, guardianContact: string): Promise<bigint>;
-    addTimetableEntry(classId: string, dayOfWeek: string, periodNum: bigint, subject: string, teacherName: string, startTime: string, endTime: string): Promise<bigint>;
+    addAttendance(token: string, studentId: bigint, date: string, status: string, classId: string | null): Promise<bigint>;
+    addFee(token: string, studentId: bigint, amount: bigint, description: string, dueDate: string, paidDate: string | null, status: string, feeType: string, collectedBy: string, paidAmount: bigint): Promise<bigint>;
+    addFeeType(token: string, name: string, description: string, defaultAmount: bigint): Promise<bigint>;
+    addHomework(token: string, title: string, description: string, subject: string, classId: string, dueDate: string): Promise<bigint>;
+    addNotice(token: string, title: string, content: string, createdAt: string): Promise<bigint>;
+    addResult(token: string, studentId: bigint, subject: string, examName: string, marksObtained: number, totalMarks: number, grade: string): Promise<bigint>;
+    addStudent(token: string, name: string, grade: string, section: string, rollNo: bigint, guardianName: string, guardianContact: string): Promise<bigint>;
+    addTimetableEntry(token: string, classId: string, dayOfWeek: string, periodNum: bigint, subject: string, teacherName: string, startTime: string, endTime: string): Promise<bigint>;
     assignCallerUserRole(user: Principal, role: UserRole__1): Promise<void>;
+    assignFeeToGrade(token: string, grade: string, feeTypeId: bigint, amount: bigint, dueDate: string): Promise<bigint>;
     createTeacherAccount(adminToken: string, username: string, password: string, displayName: string): Promise<void>;
-    dashboardStats(): Promise<Stats>;
-    deleteStudent(id: bigint): Promise<void>;
-    deleteTeacherAccount(adminToken: string, userId: bigint): Promise<void>;
-    getAllNotices(): Promise<Array<Notice>>;
-    getAllStudents(): Promise<Array<Student>>;
-    getAttendanceByClass(classId: string): Promise<Array<Attendance>>;
-    getAttendanceByStudent(studentId: bigint): Promise<Array<Attendance>>;
+    dashboardStats(token: string): Promise<Stats>;
+    deleteFee(token: string, id: bigint): Promise<void>;
+    deleteFeeType(token: string, id: bigint): Promise<void>;
+    deleteStudent(token: string, id: bigint): Promise<void>;
+    deleteTeacherAccount(adminToken: string, targetUserId: bigint): Promise<void>;
+    getAllFees(token: string): Promise<Array<Fee>>;
+    getAllNotices(token: string): Promise<Array<Notice>>;
+    getAllStudents(token: string): Promise<Array<Student>>;
+    getAttendanceByClass(token: string, classId: string): Promise<Array<Attendance>>;
+    getAttendanceByStudent(token: string, studentId: bigint): Promise<Array<Attendance>>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole__1>;
     getCurrentUser(token: string): Promise<UserAccount | null>;
-    getFeesByStudent(studentId: bigint): Promise<Array<Fee>>;
-    getHomeworkByClass(classId: string): Promise<Array<Homework>>;
-    getPendingFees(): Promise<Array<Fee>>;
-    getResultsByStudent(studentId: bigint): Promise<Array<Result>>;
-    getStudent(id: bigint): Promise<Student | null>;
-    getTimetableByClass(classId: string): Promise<Array<TimetableEntry>>;
+    getFeeSummary(token: string): Promise<FeeSummary>;
+    getFeeTypes(token: string): Promise<Array<FeeType>>;
+    getFeesByStudent(token: string, studentId: bigint): Promise<Array<Fee>>;
+    getGradeFeeAssignments(token: string): Promise<Array<GradeFeeAssignment>>;
+    getHomeworkByClass(token: string, classId: string): Promise<Array<Homework>>;
+    getPendingFees(token: string): Promise<Array<Fee>>;
+    getPendingFeesWithStudents(token: string): Promise<Array<[Fee, string]>>;
+    getResultsByStudent(token: string, studentId: bigint): Promise<Array<Result>>;
+    getStudent(token: string, id: bigint): Promise<Student | null>;
+    getTimetableByClass(token: string, classId: string): Promise<Array<TimetableEntry>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listTeachers(token: string): Promise<Array<UserAccount>>;
     login(username: string, password: string): Promise<AuthResponse>;
     logout(token: string): Promise<void>;
     saveCallerUserProfile(profile: UserProfile): Promise<void>;
-    seedData(): Promise<void>;
-    updateFeeStatus(feeId: bigint, status: string): Promise<void>;
-    updateStudent(id: bigint, name: string, grade: string, section: string, rollNo: bigint, guardianName: string, guardianContact: string): Promise<void>;
-    updateTeacherAccount(adminToken: string, userId: bigint, username: string, displayName: string): Promise<void>;
+    seedData(token: string): Promise<void>;
+    updateFee(token: string, feeId: bigint, amount: bigint, description: string, dueDate: string, paidDate: string | null, status: string, feeType: string, collectedBy: string, paidAmount: bigint): Promise<void>;
+    updateFeeType(token: string, id: bigint, name: string, description: string, defaultAmount: bigint): Promise<void>;
+    updateStudent(token: string, id: bigint, name: string, grade: string, section: string, rollNo: bigint, guardianName: string, guardianContact: string): Promise<void>;
+    updateTeacherAccount(adminToken: string, targetUserId: bigint, username: string, displayName: string): Promise<void>;
 }
 import type { Attendance as _Attendance, AuthResponse as _AuthResponse, Fee as _Fee, Student as _Student, UserAccount as _UserAccount, UserProfile as _UserProfile, UserRole as _UserRole, UserRole__1 as _UserRole__1, _CaffeineStorageRefillInformation as __CaffeineStorageRefillInformation, _CaffeineStorageRefillResult as __CaffeineStorageRefillResult } from "./declarations/backend.did.d.ts";
 export class Backend implements backendInterface {
@@ -335,101 +366,115 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async addAttendance(arg0: bigint, arg1: string, arg2: string, arg3: string | null): Promise<bigint> {
+    async addAttendance(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: string | null): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addAttendance(arg0, arg1, arg2, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg3));
+                const result = await this.actor.addAttendance(arg0, arg1, arg2, arg3, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg4));
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addAttendance(arg0, arg1, arg2, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg3));
+            const result = await this.actor.addAttendance(arg0, arg1, arg2, arg3, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg4));
             return result;
         }
     }
-    async addFee(arg0: bigint, arg1: bigint, arg2: string, arg3: string, arg4: string | null, arg5: string): Promise<bigint> {
+    async addFee(arg0: string, arg1: bigint, arg2: bigint, arg3: string, arg4: string, arg5: string | null, arg6: string, arg7: string, arg8: string, arg9: bigint): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addFee(arg0, arg1, arg2, arg3, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg4), arg5);
+                const result = await this.actor.addFee(arg0, arg1, arg2, arg3, arg4, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg5), arg6, arg7, arg8, arg9);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addFee(arg0, arg1, arg2, arg3, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg4), arg5);
+            const result = await this.actor.addFee(arg0, arg1, arg2, arg3, arg4, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg5), arg6, arg7, arg8, arg9);
             return result;
         }
     }
-    async addHomework(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string): Promise<bigint> {
+    async addFeeType(arg0: string, arg1: string, arg2: string, arg3: bigint): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addHomework(arg0, arg1, arg2, arg3, arg4);
+                const result = await this.actor.addFeeType(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addHomework(arg0, arg1, arg2, arg3, arg4);
+            const result = await this.actor.addFeeType(arg0, arg1, arg2, arg3);
             return result;
         }
     }
-    async addNotice(arg0: string, arg1: string, arg2: string): Promise<bigint> {
+    async addHomework(arg0: string, arg1: string, arg2: string, arg3: string, arg4: string, arg5: string): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addNotice(arg0, arg1, arg2);
+                const result = await this.actor.addHomework(arg0, arg1, arg2, arg3, arg4, arg5);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addNotice(arg0, arg1, arg2);
+            const result = await this.actor.addHomework(arg0, arg1, arg2, arg3, arg4, arg5);
             return result;
         }
     }
-    async addResult(arg0: bigint, arg1: string, arg2: string, arg3: number, arg4: number, arg5: string): Promise<bigint> {
+    async addNotice(arg0: string, arg1: string, arg2: string, arg3: string): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addResult(arg0, arg1, arg2, arg3, arg4, arg5);
+                const result = await this.actor.addNotice(arg0, arg1, arg2, arg3);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addResult(arg0, arg1, arg2, arg3, arg4, arg5);
+            const result = await this.actor.addNotice(arg0, arg1, arg2, arg3);
             return result;
         }
     }
-    async addStudent(arg0: string, arg1: string, arg2: string, arg3: bigint, arg4: string, arg5: string): Promise<bigint> {
+    async addResult(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: number, arg5: number, arg6: string): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addStudent(arg0, arg1, arg2, arg3, arg4, arg5);
+                const result = await this.actor.addResult(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addStudent(arg0, arg1, arg2, arg3, arg4, arg5);
+            const result = await this.actor.addResult(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
             return result;
         }
     }
-    async addTimetableEntry(arg0: string, arg1: string, arg2: bigint, arg3: string, arg4: string, arg5: string, arg6: string): Promise<bigint> {
+    async addStudent(arg0: string, arg1: string, arg2: string, arg3: string, arg4: bigint, arg5: string, arg6: string): Promise<bigint> {
         if (this.processError) {
             try {
-                const result = await this.actor.addTimetableEntry(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+                const result = await this.actor.addStudent(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.addTimetableEntry(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+            const result = await this.actor.addStudent(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+            return result;
+        }
+    }
+    async addTimetableEntry(arg0: string, arg1: string, arg2: string, arg3: bigint, arg4: string, arg5: string, arg6: string, arg7: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.addTimetableEntry(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.addTimetableEntry(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             return result;
         }
     }
@@ -447,6 +492,20 @@ export class Backend implements backendInterface {
             return result;
         }
     }
+    async assignFeeToGrade(arg0: string, arg1: string, arg2: bigint, arg3: bigint, arg4: string): Promise<bigint> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.assignFeeToGrade(arg0, arg1, arg2, arg3, arg4);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.assignFeeToGrade(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
     async createTeacherAccount(arg0: string, arg1: string, arg2: string, arg3: string): Promise<void> {
         if (this.processError) {
             try {
@@ -461,31 +520,59 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async dashboardStats(): Promise<Stats> {
+    async dashboardStats(arg0: string): Promise<Stats> {
         if (this.processError) {
             try {
-                const result = await this.actor.dashboardStats();
+                const result = await this.actor.dashboardStats(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.dashboardStats();
+            const result = await this.actor.dashboardStats(arg0);
             return result;
         }
     }
-    async deleteStudent(arg0: bigint): Promise<void> {
+    async deleteFee(arg0: string, arg1: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.deleteStudent(arg0);
+                const result = await this.actor.deleteFee(arg0, arg1);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.deleteStudent(arg0);
+            const result = await this.actor.deleteFee(arg0, arg1);
+            return result;
+        }
+    }
+    async deleteFeeType(arg0: string, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteFeeType(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteFeeType(arg0, arg1);
+            return result;
+        }
+    }
+    async deleteStudent(arg0: string, arg1: bigint): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.deleteStudent(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.deleteStudent(arg0, arg1);
             return result;
         }
     }
@@ -503,185 +590,255 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async getAllNotices(): Promise<Array<Notice>> {
+    async getAllFees(arg0: string): Promise<Array<Fee>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAllNotices();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAllNotices();
-            return result;
-        }
-    }
-    async getAllStudents(): Promise<Array<Student>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getAllStudents();
-                return result;
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getAllStudents();
-            return result;
-        }
-    }
-    async getAttendanceByClass(arg0: string): Promise<Array<Attendance>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getAttendanceByClass(arg0);
+                const result = await this.actor.getAllFees(arg0);
                 return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAttendanceByClass(arg0);
+            const result = await this.actor.getAllFees(arg0);
             return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getAttendanceByStudent(arg0: bigint): Promise<Array<Attendance>> {
+    async getAllNotices(arg0: string): Promise<Array<Notice>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getAttendanceByStudent(arg0);
-                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getAllNotices(arg0);
+                return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getAttendanceByStudent(arg0);
-            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getAllNotices(arg0);
+            return result;
+        }
+    }
+    async getAllStudents(arg0: string): Promise<Array<Student>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllStudents(arg0);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllStudents(arg0);
+            return result;
+        }
+    }
+    async getAttendanceByClass(arg0: string, arg1: string): Promise<Array<Attendance>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAttendanceByClass(arg0, arg1);
+                return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAttendanceByClass(arg0, arg1);
+            return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getAttendanceByStudent(arg0: string, arg1: bigint): Promise<Array<Attendance>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAttendanceByStudent(arg0, arg1);
+                return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAttendanceByStudent(arg0, arg1);
+            return from_candid_vec_n15(this._uploadFile, this._downloadFile, result);
         }
     }
     async getCallerUserProfile(): Promise<UserProfile | null> {
         if (this.processError) {
             try {
                 const result = await this.actor.getCallerUserProfile();
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCallerUserProfile();
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCallerUserRole(): Promise<UserRole__1> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCallerUserRole();
-                return from_candid_UserRole__1_n16(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getCallerUserRole();
-            return from_candid_UserRole__1_n16(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getCurrentUser(arg0: string): Promise<UserAccount | null> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getCurrentUser(arg0);
                 return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getCurrentUser(arg0);
+            const result = await this.actor.getCallerUserProfile();
             return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getFeesByStudent(arg0: bigint): Promise<Array<Fee>> {
+    async getCallerUserRole(): Promise<UserRole__1> {
         if (this.processError) {
             try {
-                const result = await this.actor.getFeesByStudent(arg0);
-                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getCallerUserRole();
+                return from_candid_UserRole__1_n19(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getFeesByStudent(arg0);
-            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getCallerUserRole();
+            return from_candid_UserRole__1_n19(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getHomeworkByClass(arg0: string): Promise<Array<Homework>> {
+    async getCurrentUser(arg0: string): Promise<UserAccount | null> {
         if (this.processError) {
             try {
-                const result = await this.actor.getHomeworkByClass(arg0);
+                const result = await this.actor.getCurrentUser(arg0);
+                return from_candid_opt_n21(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getCurrentUser(arg0);
+            return from_candid_opt_n21(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getFeeSummary(arg0: string): Promise<FeeSummary> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getFeeSummary(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getHomeworkByClass(arg0);
+            const result = await this.actor.getFeeSummary(arg0);
             return result;
         }
     }
-    async getPendingFees(): Promise<Array<Fee>> {
+    async getFeeTypes(arg0: string): Promise<Array<FeeType>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getPendingFees();
-                return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
-            } catch (e) {
-                this.processError(e);
-                throw new Error("unreachable");
-            }
-        } else {
-            const result = await this.actor.getPendingFees();
-            return from_candid_vec_n23(this._uploadFile, this._downloadFile, result);
-        }
-    }
-    async getResultsByStudent(arg0: bigint): Promise<Array<Result>> {
-        if (this.processError) {
-            try {
-                const result = await this.actor.getResultsByStudent(arg0);
+                const result = await this.actor.getFeeTypes(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getResultsByStudent(arg0);
+            const result = await this.actor.getFeeTypes(arg0);
             return result;
         }
     }
-    async getStudent(arg0: bigint): Promise<Student | null> {
+    async getFeesByStudent(arg0: string, arg1: bigint): Promise<Array<Fee>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getStudent(arg0);
-                return from_candid_opt_n26(this._uploadFile, this._downloadFile, result);
+                const result = await this.actor.getFeesByStudent(arg0, arg1);
+                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getStudent(arg0);
-            return from_candid_opt_n26(this._uploadFile, this._downloadFile, result);
+            const result = await this.actor.getFeesByStudent(arg0, arg1);
+            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
         }
     }
-    async getTimetableByClass(arg0: string): Promise<Array<TimetableEntry>> {
+    async getGradeFeeAssignments(arg0: string): Promise<Array<GradeFeeAssignment>> {
         if (this.processError) {
             try {
-                const result = await this.actor.getTimetableByClass(arg0);
+                const result = await this.actor.getGradeFeeAssignments(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.getTimetableByClass(arg0);
+            const result = await this.actor.getGradeFeeAssignments(arg0);
+            return result;
+        }
+    }
+    async getHomeworkByClass(arg0: string, arg1: string): Promise<Array<Homework>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getHomeworkByClass(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getHomeworkByClass(arg0, arg1);
+            return result;
+        }
+    }
+    async getPendingFees(arg0: string): Promise<Array<Fee>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPendingFees(arg0);
+                return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPendingFees(arg0);
+            return from_candid_vec_n11(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getPendingFeesWithStudents(arg0: string): Promise<Array<[Fee, string]>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getPendingFeesWithStudents(arg0);
+                return from_candid_vec_n26(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getPendingFeesWithStudents(arg0);
+            return from_candid_vec_n26(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getResultsByStudent(arg0: string, arg1: bigint): Promise<Array<Result>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getResultsByStudent(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getResultsByStudent(arg0, arg1);
+            return result;
+        }
+    }
+    async getStudent(arg0: string, arg1: bigint): Promise<Student | null> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getStudent(arg0, arg1);
+                return from_candid_opt_n28(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getStudent(arg0, arg1);
+            return from_candid_opt_n28(this._uploadFile, this._downloadFile, result);
+        }
+    }
+    async getTimetableByClass(arg0: string, arg1: string): Promise<Array<TimetableEntry>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getTimetableByClass(arg0, arg1);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getTimetableByClass(arg0, arg1);
             return result;
         }
     }
@@ -689,14 +846,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getUserProfile(arg0);
-                return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+                return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getUserProfile(arg0);
-            return from_candid_opt_n15(this._uploadFile, this._downloadFile, result);
+            return from_candid_opt_n18(this._uploadFile, this._downloadFile, result);
         }
     }
     async isCallerAdmin(): Promise<boolean> {
@@ -717,28 +874,28 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.listTeachers(arg0);
-                return from_candid_vec_n27(this._uploadFile, this._downloadFile, result);
+                return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.listTeachers(arg0);
-            return from_candid_vec_n27(this._uploadFile, this._downloadFile, result);
+            return from_candid_vec_n29(this._uploadFile, this._downloadFile, result);
         }
     }
     async login(arg0: string, arg1: string): Promise<AuthResponse> {
         if (this.processError) {
             try {
                 const result = await this.actor.login(arg0, arg1);
-                return from_candid_AuthResponse_n28(this._uploadFile, this._downloadFile, result);
+                return from_candid_AuthResponse_n30(this._uploadFile, this._downloadFile, result);
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.login(arg0, arg1);
-            return from_candid_AuthResponse_n28(this._uploadFile, this._downloadFile, result);
+            return from_candid_AuthResponse_n30(this._uploadFile, this._downloadFile, result);
         }
     }
     async logout(arg0: string): Promise<void> {
@@ -769,45 +926,59 @@ export class Backend implements backendInterface {
             return result;
         }
     }
-    async seedData(): Promise<void> {
+    async seedData(arg0: string): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.seedData();
+                const result = await this.actor.seedData(arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.seedData();
+            const result = await this.actor.seedData(arg0);
             return result;
         }
     }
-    async updateFeeStatus(arg0: bigint, arg1: string): Promise<void> {
+    async updateFee(arg0: string, arg1: bigint, arg2: bigint, arg3: string, arg4: string, arg5: string | null, arg6: string, arg7: string, arg8: string, arg9: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateFeeStatus(arg0, arg1);
+                const result = await this.actor.updateFee(arg0, arg1, arg2, arg3, arg4, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg5), arg6, arg7, arg8, arg9);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateFeeStatus(arg0, arg1);
+            const result = await this.actor.updateFee(arg0, arg1, arg2, arg3, arg4, to_candid_opt_n8(this._uploadFile, this._downloadFile, arg5), arg6, arg7, arg8, arg9);
             return result;
         }
     }
-    async updateStudent(arg0: bigint, arg1: string, arg2: string, arg3: string, arg4: bigint, arg5: string, arg6: string): Promise<void> {
+    async updateFeeType(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: bigint): Promise<void> {
         if (this.processError) {
             try {
-                const result = await this.actor.updateStudent(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+                const result = await this.actor.updateFeeType(arg0, arg1, arg2, arg3, arg4);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateStudent(arg0, arg1, arg2, arg3, arg4, arg5, arg6);
+            const result = await this.actor.updateFeeType(arg0, arg1, arg2, arg3, arg4);
+            return result;
+        }
+    }
+    async updateStudent(arg0: string, arg1: bigint, arg2: string, arg3: string, arg4: string, arg5: bigint, arg6: string, arg7: string): Promise<void> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.updateStudent(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+                return result;
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.updateStudent(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
             return result;
         }
     }
@@ -826,23 +997,23 @@ export class Backend implements backendInterface {
         }
     }
 }
-function from_candid_Attendance_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Attendance): Attendance {
+function from_candid_Attendance_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Attendance): Attendance {
+    return from_candid_record_n17(_uploadFile, _downloadFile, value);
+}
+function from_candid_AuthResponse_n30(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AuthResponse): AuthResponse {
+    return from_candid_record_n31(_uploadFile, _downloadFile, value);
+}
+function from_candid_Fee_n12(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Fee): Fee {
     return from_candid_record_n13(_uploadFile, _downloadFile, value);
 }
-function from_candid_AuthResponse_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _AuthResponse): AuthResponse {
-    return from_candid_record_n29(_uploadFile, _downloadFile, value);
+function from_candid_UserAccount_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserAccount): UserAccount {
+    return from_candid_record_n23(_uploadFile, _downloadFile, value);
 }
-function from_candid_Fee_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _Fee): Fee {
-    return from_candid_record_n25(_uploadFile, _downloadFile, value);
+function from_candid_UserRole__1_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole__1): UserRole__1 {
+    return from_candid_variant_n20(_uploadFile, _downloadFile, value);
 }
-function from_candid_UserAccount_n19(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserAccount): UserAccount {
-    return from_candid_record_n20(_uploadFile, _downloadFile, value);
-}
-function from_candid_UserRole__1_n16(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole__1): UserRole__1 {
-    return from_candid_variant_n17(_uploadFile, _downloadFile, value);
-}
-function from_candid_UserRole_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
-    return from_candid_variant_n22(_uploadFile, _downloadFile, value);
+function from_candid_UserRole_n24(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: _UserRole): UserRole {
+    return from_candid_variant_n25(_uploadFile, _downloadFile, value);
 }
 function from_candid__CaffeineStorageRefillResult_n4(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: __CaffeineStorageRefillResult): _CaffeineStorageRefillResult {
     return from_candid_record_n5(_uploadFile, _downloadFile, value);
@@ -850,13 +1021,13 @@ function from_candid__CaffeineStorageRefillResult_n4(_uploadFile: (file: Externa
 function from_candid_opt_n14(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [string]): string | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
+function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserProfile]): UserProfile | null {
     return value.length === 0 ? null : value[0];
 }
-function from_candid_opt_n18(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserAccount]): UserAccount | null {
-    return value.length === 0 ? null : from_candid_UserAccount_n19(_uploadFile, _downloadFile, value[0]);
+function from_candid_opt_n21(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_UserAccount]): UserAccount | null {
+    return value.length === 0 ? null : from_candid_UserAccount_n22(_uploadFile, _downloadFile, value[0]);
 }
-function from_candid_opt_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Student]): Student | null {
+function from_candid_opt_n28(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [_Student]): Student | null {
     return value.length === 0 ? null : value[0];
 }
 function from_candid_opt_n6(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [] | [boolean]): boolean | null {
@@ -866,6 +1037,42 @@ function from_candid_opt_n7(_uploadFile: (file: ExternalBlob) => Promise<Uint8Ar
     return value.length === 0 ? null : value[0];
 }
 function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+    id: bigint;
+    status: string;
+    studentId: bigint;
+    feeType: string;
+    dueDate: string;
+    description: string;
+    collectedBy: string;
+    paidDate: [] | [string];
+    paidAmount: bigint;
+    amount: bigint;
+}): {
+    id: bigint;
+    status: string;
+    studentId: bigint;
+    feeType: string;
+    dueDate: string;
+    description: string;
+    collectedBy: string;
+    paidDate?: string;
+    paidAmount: bigint;
+    amount: bigint;
+} {
+    return {
+        id: value.id,
+        status: value.status,
+        studentId: value.studentId,
+        feeType: value.feeType,
+        dueDate: value.dueDate,
+        description: value.description,
+        collectedBy: value.collectedBy,
+        paidDate: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.paidDate)),
+        paidAmount: value.paidAmount,
+        amount: value.amount
+    };
+}
+function from_candid_record_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: bigint;
     status: string;
     studentId: bigint;
@@ -886,7 +1093,7 @@ function from_candid_record_n13(_uploadFile: (file: ExternalBlob) => Promise<Uin
         classId: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.classId))
     };
 }
-function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     id: bigint;
     username: string;
     displayName: string;
@@ -903,38 +1110,11 @@ function from_candid_record_n20(_uploadFile: (file: ExternalBlob) => Promise<Uin
         id: value.id,
         username: value.username,
         displayName: value.displayName,
-        role: from_candid_UserRole_n21(_uploadFile, _downloadFile, value.role),
+        role: from_candid_UserRole_n24(_uploadFile, _downloadFile, value.role),
         passwordHash: value.passwordHash
     };
 }
-function from_candid_record_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
-    id: bigint;
-    status: string;
-    studentId: bigint;
-    dueDate: string;
-    description: string;
-    paidDate: [] | [string];
-    amount: bigint;
-}): {
-    id: bigint;
-    status: string;
-    studentId: bigint;
-    dueDate: string;
-    description: string;
-    paidDate?: string;
-    amount: bigint;
-} {
-    return {
-        id: value.id,
-        status: value.status,
-        studentId: value.studentId,
-        dueDate: value.dueDate,
-        description: value.description,
-        paidDate: record_opt_to_undefined(from_candid_opt_n14(_uploadFile, _downloadFile, value.paidDate)),
-        amount: value.amount
-    };
-}
-function from_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_record_n31(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     token: string;
     user: _UserAccount;
 }): {
@@ -943,7 +1123,7 @@ function from_candid_record_n29(_uploadFile: (file: ExternalBlob) => Promise<Uin
 } {
     return {
         token: value.token,
-        user: from_candid_UserAccount_n19(_uploadFile, _downloadFile, value.user)
+        user: from_candid_UserAccount_n22(_uploadFile, _downloadFile, value.user)
     };
 }
 function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
@@ -958,7 +1138,13 @@ function from_candid_record_n5(_uploadFile: (file: ExternalBlob) => Promise<Uint
         topped_up_amount: record_opt_to_undefined(from_candid_opt_n7(_uploadFile, _downloadFile, value.topped_up_amount))
     };
 }
-function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_tuple_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: [_Fee, string]): [Fee, string] {
+    return [
+        from_candid_Fee_n12(_uploadFile, _downloadFile, value[0]),
+        value[1]
+    ];
+}
+function from_candid_variant_n20(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     user: null;
@@ -967,21 +1153,24 @@ function from_candid_variant_n17(_uploadFile: (file: ExternalBlob) => Promise<Ui
 }): UserRole__1 {
     return "admin" in value ? UserRole__1.admin : "user" in value ? UserRole__1.user : "guest" in value ? UserRole__1.guest : value;
 }
-function from_candid_variant_n22(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
+function from_candid_variant_n25(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: {
     admin: null;
 } | {
     teacher: null;
 }): UserRole {
     return "admin" in value ? UserRole.admin : "teacher" in value ? UserRole.teacher : value;
 }
-function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Attendance>): Array<Attendance> {
-    return value.map((x)=>from_candid_Attendance_n12(_uploadFile, _downloadFile, x));
+function from_candid_vec_n11(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Fee>): Array<Fee> {
+    return value.map((x)=>from_candid_Fee_n12(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n23(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Fee>): Array<Fee> {
-    return value.map((x)=>from_candid_Fee_n24(_uploadFile, _downloadFile, x));
+function from_candid_vec_n15(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_Attendance>): Array<Attendance> {
+    return value.map((x)=>from_candid_Attendance_n16(_uploadFile, _downloadFile, x));
 }
-function from_candid_vec_n27(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserAccount>): Array<UserAccount> {
-    return value.map((x)=>from_candid_UserAccount_n19(_uploadFile, _downloadFile, x));
+function from_candid_vec_n26(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<[_Fee, string]>): Array<[Fee, string]> {
+    return value.map((x)=>from_candid_tuple_n27(_uploadFile, _downloadFile, x));
+}
+function from_candid_vec_n29(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: Array<_UserAccount>): Array<UserAccount> {
+    return value.map((x)=>from_candid_UserAccount_n22(_uploadFile, _downloadFile, x));
 }
 function to_candid_UserRole__1_n9(_uploadFile: (file: ExternalBlob) => Promise<Uint8Array>, _downloadFile: (file: Uint8Array) => Promise<ExternalBlob>, value: UserRole__1): _UserRole__1 {
     return to_candid_variant_n10(_uploadFile, _downloadFile, value);
